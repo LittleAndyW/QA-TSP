@@ -1,0 +1,276 @@
+#coding:utf-8
+import time
+import math
+import numpy as np
+import os
+import random
+import matplotlib.pyplot as plt
+
+
+
+def getSpinConfig():
+
+    ## 是一个特洛塔尺寸，旋转的协调在某一时间  あるトロッタ次元の、ある時刻におけるspinの配位
+    def spin_config_at_a_time_in_a_TROTTER_DIM(tag):
+        config = list(-np.ones(NCITY, dtype = np.int))#生成一维数组，大小为ncity，数据为-1，类型为int
+        config[tag] = 1#改变tag位置上的数据为1
+        return config#返回一个大小为ncity，tag位数为1，其余为-1的一维数组
+
+    def spin_config_in_a_TROTTER_DIM(tag):#tag是一维数组，大小为从1到ncity
+        spin = []
+        spin.append(config_at_init_time)
+        for i in range(TOTAL_TIME-1):
+            spin.append(list(spin_config_at_a_time_in_a_TROTTER_DIM(tag[i])))
+        return spin#返回一个
+
+    spin = []
+    for i in range(TROTTER_DIM):
+        tag = np.arange(1,NCITY)#生成1-ncity的一维数组
+        np.random.shuffle(tag)#将上数组顺序打乱
+        spin.append(spin_config_in_a_TROTTER_DIM(tag))
+    return spin
+
+def getBestRoute(config):
+    length = []
+    for i in range(TROTTER_DIM):
+        route = []
+        for j in range(TOTAL_TIME):
+            route.append(config[i][j].index(1))
+        length.append(getTotaldistance(route))
+
+    min_Tro_dim = np.argmin(length)
+    Best_Route = []
+    for i in range(TOTAL_TIME):
+        Best_Route.append(config[min_Tro_dim][i].index(1))
+    return Best_Route
+
+
+def getTotaldistance(route):
+    Total_distance = 0
+    for i in range(TOTAL_TIME):
+        Total_distance += distance(route[i],route[(i+1)%TOTAL_TIME])/max_distance
+    return Total_distance
+
+
+def getRealTotaldistance(route):
+    Total_distance = 0
+    for i in range(TOTAL_TIME):
+        Total_distance += distance(route[i], route[(i+1)%TOTAL_TIME])
+    return Total_distance
+
+
+## 量子蒙特卡罗步骤
+def QMC_move(config, ann_para):
+    # 两个不同的时间a,b选
+    c = np.random.randint(0,TROTTER_DIM)
+    a_ = list(range(1,TOTAL_TIME))
+    a = np.random.choice(a_)
+    a_.remove(a)#排除已经选择了的a
+    b = np.random.choice(a_)
+
+    # 在一些＃特洛塔数字c，的时间的，城市P中B，q是  あるトロッタ数cで、時刻a,bにいる都市p,q
+    p = config[c][a].index(1)
+    q = config[c][b].index(1)
+
+    # 初始化的能量差的值  エネルギー差の値を初期化
+    delta_cost = delta_costc = delta_costq_1 = delta_costq_2 = delta_costq_3 = delta_costq_4 = 0
+
+    for j in range(NCITY):
+        l_p_j = distance(p, j)/max_distance
+        l_q_j = distance(q, j)/max_distance
+        delta_costc += 2*(-l_p_j*config[c][a][p] - l_q_j*config[c][a][q])*(config[c][a-1][j]+config[c][(a+1)%TOTAL_TIME][j])+2*(-l_p_j*config[c][b][p] - l_q_j*config[c][b][q])*(config[c][b-1][j]+config[c][(b+1)%TOTAL_TIME][j])
+
+    # 之前和的能量差之后翻转自旋为等式（7）的第二项  (7)式の第二項についてspinをフリップする前後のエネルギー差
+    para = (1/BETA)*math.log(math.cosh(BETA*ann_para/TROTTER_DIM)/math.sinh(BETA*ann_para/TROTTER_DIM))
+    delta_costq_1 = config[c][a][p]*(config[(c-1)%TROTTER_DIM][a][p]+config[(c+1)%TROTTER_DIM][a][p])
+    delta_costq_2 = config[c][a][q]*(config[(c-1)%TROTTER_DIM][a][q]+config[(c+1)%TROTTER_DIM][a][q])
+    delta_costq_3 = config[c][b][p]*(config[(c-1)%TROTTER_DIM][b][p]+config[(c+1)%TROTTER_DIM][b][p])
+    delta_costq_4 = config[c][b][q]*(config[(c-1)%TROTTER_DIM][b][q]+config[(c+1)%TROTTER_DIM][b][q])
+
+    # 之前和能量差之后＃（7）翻转约类型自旋  (7)式についてspinをフリップする前後のエネルギー差
+    delta_cost = delta_costc/TROTTER_DIM+para*(delta_costq_1+delta_costq_2+delta_costq_3+delta_costq_4)
+
+    # 概率min(1,exp(-BETA*delta_cost))在翻转
+    if delta_cost <= 0:
+        config[c][a][p]*=-1
+        config[c][a][q]*=-1
+        config[c][b][p]*=-1
+        config[c][b][q]*=-1
+    elif np.random.random() < np.exp(-BETA*delta_cost):
+        config[c][a][p]*=-1
+        config[c][a][q]*=-1
+        config[c][b][p]*=-1
+        config[c][b][q]*=-1
+
+    return config
+
+def creat_dist_matrix(P):
+	dist_matrix =[]
+	row=[]
+	N=len(P)
+	#初始化距离矩阵
+	for i in range(N):
+		for j in range(N):
+			row.append(65535)
+		dist_matrix.append(row)
+		row=[]
+	#构建非全连同图矩阵
+	for i in range(N):
+		length=len(LINK[i])
+		for j in range(length-1):
+			pos=POINTNAME.index(LINK[i][j+1])
+			dist=math.sqrt((float(P[i][0])-float(P[pos][0]))**2 + (float(P[i][1])-float(P[pos][1]))**2)
+			dist=round(dist,2)
+			dist_matrix[i][pos]=dist
+
+	return dist_matrix
+
+def Floyd(G,Path):
+	#节点数
+	Length=len(G)
+	#创建A，Path矩阵
+	A=np.zeros((Length,Length),dtype=float)
+	Path=np.zeros((Length,Length),dtype=int)
+
+
+	for i in range(Length):
+		for j in range(Length):
+			A[i][j]=G[i][j]
+			Path[i][j]=-1
+
+	for k in range(Length):
+		for i in range(Length):
+			for j in range(Length):
+				if A[i][j]>(A[i][k]+A[k][j]):
+					A[i][j]=A[i][k]+A[k][j]
+					Path[i][j]=k
+
+	return A
+
+def getPath(u,v, Path,route):
+    if Path[u][v] ==-1:
+		route.append(list([u,v]))
+	else:
+		mid=path[u][v]
+		getPath(u,mid, Path,route)
+		getPath(mid,v, Path,route)
+
+
+def draw_Route(P,D_Matrix,R):
+	#绘制道路网
+	for i in range(len(D_Matrix)):
+		for j in range(i,len(D_Matrix)):
+			if D_Matrix[i][j]!=65535:
+				plt.plot([P[i][0],P[j][0]],[P[i][1],P[j][1]],linewidth=12.0,zorder=2,c='b')
+
+	#绘制坐标点
+	for i in range(len(P)):
+		plt.scatter(P[i][0], P[i][1],s=120,zorder=3, color='b')
+		plt.text(P[i][0], P[i][1],P[i][2],size=10,ha="center", va="center", bbox=dict(boxstyle="round",
+                   ec=(1., 0.5, 0.5),
+                   fc=(1., 0.8, 0.8),
+                   ))
+	#绘制路线
+	for i in range(len(R)):
+		plt.plot([P[i][0],P[(i+1)%len(R)][0]],[P[i][1],P[(i+1)%len(R)][1]],linewidth=3.0,zorder=3,c='r')
+		plt.text((P[i][0]+P[(i+1)%len(R)][0])/2,(P[i][1]+P[(i+1)%len(R)][1])/2, str(i+1), fontsize=16, rotation_mode='anchor')
+		
+	plt.grid(True,ls='--')
+	plt.show()
+
+# 参数的输入''
+'''TROTTER_DIM = int(input("Trotter dimension: "))
+ANN_PARA =  float(input("initial annealing parameter: "))
+ANN_STEP = int(input("Annealing Step: "))
+MC_STEP = int(input("MC step: "))
+BETA = float(input("inverse Temperature: "))
+REDUC_PARA = 0.99'''
+
+TROTTER_DIM = 10
+ANN_PARA =  1.0
+ANN_STEP = 500
+MC_STEP = 3320
+BETA = 37
+REDUC_PARA = 0.99
+
+FILE_NAME = 'FILE_NAME '
+#读取点坐标
+f = open('./ex1.txt').read().split("\n")
+POINT = []
+POINTNAME=[]
+for i in f:
+    POINT.append(i.split(" "))
+POINT.pop()
+
+#读取点坐标至之间的关系
+f = open('./link.txt').read().split("\n")
+LINK = []
+for i in f:
+    LINK.append(i.split(" "))
+LINK.pop()
+
+# 城市数据
+NCITY = len(POINT)
+TOTAL_TIME = NCITY
+
+
+for i in range(NCITY):
+	POINTNAME.append(POINT[i][2])
+	for j in range(2):
+		POINT[i][j] = float(POINT[i][j])
+
+## 2城市之间距离
+def distance(p1, p2):
+    return dist_matrix[p1][p2]
+
+"""
+量子退火模拟
+"""
+if __name__ == '__main__':
+	Path=[]
+	matrix=creat_dist_matrix(POINT)
+	dist_matrix=Floyd(matrix,Path)
+
+	max_distance = 0
+
+	for i in range(NCITY):
+		for j in range(NCITY):
+			if i == j:
+				dist_matrix[i][j]=0
+
+	max_distance = 0
+	for i in range(NCITY):
+		for j in range(NCITY):
+			if max_distance <= distance(i,j):
+				max_distance = distance(i,j)
+
+
+	config_at_init_time = list(-np.ones(NCITY,dtype=np.int))
+	config_at_init_time[0] = 1
+
+	print("start...")
+	t0 = time.clock()
+
+	np.random.seed(100)
+	spin = getSpinConfig()
+	LengthList = []
+	for t in range(ANN_STEP):
+		for i in range(MC_STEP):
+			con = QMC_move(spin, ANN_PARA)
+			rou = getBestRoute(con)
+			length = getRealTotaldistance(rou)
+		LengthList.append(length)
+
+		ANN_PARA *= REDUC_PARA
+
+	Route = getBestRoute(spin)
+	Total_Length = getRealTotaldistance(Route)
+	elapsed_time = time.clock()-t0
+
+	print("最短的路线是:{}".format(Route))
+	print("最短距离{}".format(Total_Length))
+	print("处理时间{}s".format(elapsed_time))
+
+	plt.plot(LengthList)
+	plt.show()
+	draw_Route(POINT,matrix,Route)
