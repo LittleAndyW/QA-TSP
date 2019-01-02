@@ -5,6 +5,9 @@ import numpy as np
 import os
 import random
 import matplotlib.pyplot as plt
+import basefunc as B
+import Drawfunc as D
+import qafunc as QA
 
 
 
@@ -104,87 +107,9 @@ def QMC_move(config, ann_para):
 
     return config
 
-def creat_dist_matrix(P):
-	dist_matrix =[]
-	row=[]
-	N=len(P)
-	#初始化距离矩阵
-	for i in range(N):
-		for j in range(N):
-			row.append(65535)
-		dist_matrix.append(row)
-		row=[]
-	#构建非全连同图矩阵
-	for i in range(N):
-		length=len(LINK[i])
-		for j in range(length-1):
-			pos=POINTNAME.index(LINK[i][j+1])
-			dist=math.sqrt((float(P[i][0])-float(P[pos][0]))**2 + (float(P[i][1])-float(P[pos][1]))**2)
-			dist=round(dist,2)
-			dist_matrix[i][pos]=dist
 
-	return dist_matrix
-
-def Floyd(G,Path):
-	#节点数
-	Length=len(G)
-	#创建A，Path矩阵
-	A=np.zeros((Length,Length),dtype=float)
-	Path=np.zeros((Length,Length),dtype=int)
-
-
-	for i in range(Length):
-		for j in range(Length):
-			A[i][j]=G[i][j]
-			Path[i][j]=-1
-
-	for k in range(Length):
-		for i in range(Length):
-			for j in range(Length):
-				if A[i][j]>(A[i][k]+A[k][j]):
-					A[i][j]=A[i][k]+A[k][j]
-					Path[i][j]=k
-
-	return A
-
-def getPath(u,v, Path,route):
-    if Path[u][v] ==-1:
-		route.append(list([u,v]))
-	else:
-		mid=path[u][v]
-		getPath(u,mid, Path,route)
-		getPath(mid,v, Path,route)
-
-
-def draw_Route(P,D_Matrix,R):
-	#绘制道路网
-	for i in range(len(D_Matrix)):
-		for j in range(i,len(D_Matrix)):
-			if D_Matrix[i][j]!=65535:
-				plt.plot([P[i][0],P[j][0]],[P[i][1],P[j][1]],linewidth=12.0,zorder=2,c='b')
-
-	#绘制坐标点
-	for i in range(len(P)):
-		plt.scatter(P[i][0], P[i][1],s=120,zorder=3, color='b')
-		plt.text(P[i][0], P[i][1],P[i][2],size=10,ha="center", va="center", bbox=dict(boxstyle="round",
-                   ec=(1., 0.5, 0.5),
-                   fc=(1., 0.8, 0.8),
-                   ))
-	#绘制路线
-	for i in range(len(R)):
-		plt.plot([P[i][0],P[(i+1)%len(R)][0]],[P[i][1],P[(i+1)%len(R)][1]],linewidth=3.0,zorder=3,c='r')
-		plt.text((P[i][0]+P[(i+1)%len(R)][0])/2,(P[i][1]+P[(i+1)%len(R)][1])/2, str(i+1), fontsize=16, rotation_mode='anchor')
-		
-	plt.grid(True,ls='--')
-	plt.show()
 
 # 参数的输入''
-'''TROTTER_DIM = int(input("Trotter dimension: "))
-ANN_PARA =  float(input("initial annealing parameter: "))
-ANN_STEP = int(input("Annealing Step: "))
-MC_STEP = int(input("MC step: "))
-BETA = float(input("inverse Temperature: "))
-REDUC_PARA = 0.99'''
 
 TROTTER_DIM = 10
 ANN_PARA =  1.0
@@ -197,7 +122,7 @@ FILE_NAME = 'FILE_NAME '
 #读取点坐标
 f = open('./ex1.txt').read().split("\n")
 POINT = []
-POINTNAME=[]
+
 for i in f:
     POINT.append(i.split(" "))
 POINT.pop()
@@ -214,23 +139,23 @@ NCITY = len(POINT)
 TOTAL_TIME = NCITY
 
 
-for i in range(NCITY):
-	POINTNAME.append(POINT[i][2])
-	for j in range(2):
-		POINT[i][j] = float(POINT[i][j])
-
 ## 2城市之间距离
 def distance(p1, p2):
     return dist_matrix[p1][p2]
+
 
 """
 量子退火模拟
 """
 if __name__ == '__main__':
-	Path=[]
-	matrix=creat_dist_matrix(POINT)
-	dist_matrix=Floyd(matrix,Path)
 
+	matrix=B.creat_dist_matrix(POINT,LINK)
+	
+	A_Path=B.Floyd(matrix)
+	dist_matrix=A_Path[0]  #距离矩阵
+	Path=A_Path[1]   #路径矩阵
+	
+	#getPath(3,5)
 	max_distance = 0
 
 	for i in range(NCITY):
@@ -251,7 +176,7 @@ if __name__ == '__main__':
 	print("start...")
 	t0 = time.clock()
 
-	np.random.seed(100)
+	np.random.seed(11)
 	spin = getSpinConfig()
 	LengthList = []
 	for t in range(ANN_STEP):
@@ -273,4 +198,4 @@ if __name__ == '__main__':
 
 	plt.plot(LengthList)
 	plt.show()
-	draw_Route(POINT,matrix,Route)
+	D.draw_Route(POINT,matrix,Route)
