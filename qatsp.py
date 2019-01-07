@@ -90,17 +90,17 @@ def QMC_move(config, ann_para):
 
     # （7）来回翻转自旋的能量差的第一项  (7)式の第一項についてspinをフリップする前後のエネルギーの差
     for j in range(NCITY):
-        l_p_j = distance(p,j)/max_distance
-        l_q_j = distance(q,j)/max_distance
-        delta_costc += 2*(-l_p_j*config[c][a][p] - l_q_j*config[c][a][q])*(config[c][a-1][j]+config[c][(a+1)%TOTAL_TIME][j])+2*(-l_p_j*config[c][b][p] - l_q_j*config[c][b][q])*(config[c][b-1][j]+config[c][(b+1)%TOTAL_TIME][j])
-	#delta_costc=2*sum((-lpj + lqj)*(config[c][][j] - config[c][(a+1)%TOTAL_TIME]))
+		l_p_j = distance(p,j)/max_distance
+		l_q_j = distance(q,j)/max_distance
+		delta_costc += 2*(-l_p_j*config[c][a][p] - l_q_j*config[c][a][q])*(config[c][a-1][j]+config[c][(a+1)%TOTAL_TIME][j])+2*(-l_p_j*config[c][b][p] - l_q_j*config[c][b][q])*(config[c][b-1][j]+config[c][(b+1)%TOTAL_TIME][j])
+#delta_costc=2*sum((-lpj + lqj)*(config[c][][j] - config[c][(a+1)%TOTAL_TIME]))
 
-    # 之前和的能量差之后翻转自旋为等式（7）的第二项  (7)式の第二項についてspinをフリップする前後のエネルギー差
-    para = (1/BETA)*math.log(math.cosh(BETA*ann_para/TROTTER_DIM)/math.sinh(BETA*ann_para/TROTTER_DIM))
-    delta_costq_1 = config[c][a][p]*(config[(c-1)%TROTTER_DIM][a][p]+config[(c+1)%TROTTER_DIM][a][p]) #-2
-    delta_costq_2 = config[c][a][q]*(config[(c-1)%TROTTER_DIM][a][q]+config[(c+1)%TROTTER_DIM][a][q]) #2
-    delta_costq_3 = config[c][b][p]*(config[(c-1)%TROTTER_DIM][b][p]+config[(c+1)%TROTTER_DIM][b][p]) #2
-    delta_costq_4 = config[c][b][q]*(config[(c-1)%TROTTER_DIM][b][q]+config[(c+1)%TROTTER_DIM][b][q]) #-2
+# 之前和的能量差之后翻转自旋为等式（7）的第二项  (7)式の第二項についてspinをフリップする前後のエネルギー差
+	para = (1/BETA)*math.log(math.cosh(BETA*ann_para/TROTTER_DIM)/math.sinh(BETA*ann_para/TROTTER_DIM))
+	delta_costq_1 = config[c][a][p]*(config[(c-1)%TROTTER_DIM][a][p]+config[(c+1)%TROTTER_DIM][a][p]) #-2
+	delta_costq_2 = config[c][a][q]*(config[(c-1)%TROTTER_DIM][a][q]+config[(c+1)%TROTTER_DIM][a][q]) #2
+	delta_costq_3 = config[c][b][p]*(config[(c-1)%TROTTER_DIM][b][p]+config[(c+1)%TROTTER_DIM][b][p]) #2
+	delta_costq_4 = config[c][b][q]*(config[(c-1)%TROTTER_DIM][b][q]+config[(c+1)%TROTTER_DIM][b][q]) #-2
 
     # 之前和能量差之后＃（7）翻转约类型自旋  (7)式についてspinをフリップする前後のエネルギー差
     delta_cost = delta_costc/TROTTER_DIM+para*(delta_costq_1+delta_costq_2+delta_costq_3+delta_costq_4)

@@ -65,47 +65,48 @@ def getRealTotaldistance(route):
 ## 量子蒙特卡罗步骤
 def QMC_move(config, ann_para):
     # 两个不同的时间a,b选
-    c = np.random.randint(0,TROTTER_DIM)
-    a_ = list(range(1,TOTAL_TIME))
-    a = np.random.choice(a_)
-    a_.remove(a)#排除已经选择了的a
-    b = np.random.choice(a_)
+	c = np.random.randint(0,TROTTER_DIM)
+	a_ = list(range(1,TOTAL_TIME))
+	a = np.random.choice(a_)
+	a_.remove(a)#排除已经选择了的a
+	b = np.random.choice(a_)
 
     # 在一些＃特洛塔数字c，的时间的，城市P中B，q是  あるトロッタ数cで、時刻a,bにいる都市p,q
-    p = config[c][a].index(1)
-    q = config[c][b].index(1)
+	p = config[c][a].index(1)
+	q = config[c][b].index(1)
 
     # 初始化的能量差的值  エネルギー差の値を初期化
-    delta_cost = delta_costc = delta_costq_1 = delta_costq_2 = delta_costq_3 = delta_costq_4 = 0
+	delta_cost = delta_costc = delta_costq_1 = delta_costq_2 = delta_costq_3 = delta_costq_4 = 0
 
-    for j in range(NCITY):
-        l_p_j = distance(p, j)/max_distance
-        l_q_j = distance(q, j)/max_distance
-        delta_costc += 2*(-l_p_j*config[c][a][p] - l_q_j*config[c][a][q])*(config[c][a-1][j]+config[c][(a+1)%TOTAL_TIME][j])+2*(-l_p_j*config[c][b][p] - l_q_j*config[c][b][q])*(config[c][b-1][j]+config[c][(b+1)%TOTAL_TIME][j])
+	for j in range(NCITY):
+		l_p_j = distance(p, j)/max_distance
+		l_q_j = distance(q, j)/max_distance
+		delta_costc += 2*(-l_p_j*config[c][a][p] - l_q_j*config[c][a][q])*(config[c][a-1][j]+config[c][(a+1)%TOTAL_TIME][j])+2*(-l_p_j*config[c][b][p] - l_q_j*config[c][b][q])*(config[c][b-1][j]+config[c][(b+1)%TOTAL_TIME][j])
 
     # 之前和的能量差之后翻转自旋为等式（7）的第二项  (7)式の第二項についてspinをフリップする前後のエネルギー差
-    para = (1/BETA)*math.log(math.cosh(BETA*ann_para/TROTTER_DIM)/math.sinh(BETA*ann_para/TROTTER_DIM))
-    delta_costq_1 = config[c][a][p]*(config[(c-1)%TROTTER_DIM][a][p]+config[(c+1)%TROTTER_DIM][a][p])
-    delta_costq_2 = config[c][a][q]*(config[(c-1)%TROTTER_DIM][a][q]+config[(c+1)%TROTTER_DIM][a][q])
-    delta_costq_3 = config[c][b][p]*(config[(c-1)%TROTTER_DIM][b][p]+config[(c+1)%TROTTER_DIM][b][p])
-    delta_costq_4 = config[c][b][q]*(config[(c-1)%TROTTER_DIM][b][q]+config[(c+1)%TROTTER_DIM][b][q])
-
+	para = (1/BETA)*math.log(math.cosh(BETA*ann_para/TROTTER_DIM)/math.sinh(BETA*ann_para/TROTTER_DIM))
+	delta_costq_1 = config[c][a][p]*(config[(c-1)%TROTTER_DIM][a][p]+config[(c+1)%TROTTER_DIM][a][p])
+	delta_costq_2 = config[c][a][q]*(config[(c-1)%TROTTER_DIM][a][q]+config[(c+1)%TROTTER_DIM][a][q])
+	delta_costq_3 = config[c][b][p]*(config[(c-1)%TROTTER_DIM][b][p]+config[(c+1)%TROTTER_DIM][b][p])
+	delta_costq_4 = config[c][b][q]*(config[(c-1)%TROTTER_DIM][b][q]+config[(c+1)%TROTTER_DIM][b][q])
+	delta_total=delta_costq_1+delta_costq_2+delta_costq_3+delta_costq_4
+	#print(delta_total)
     # 之前和能量差之后＃（7）翻转约类型自旋  (7)式についてspinをフリップする前後のエネルギー差
-    delta_cost = delta_costc/TROTTER_DIM+para*(delta_costq_1+delta_costq_2+delta_costq_3+delta_costq_4)
+	delta_cost = delta_costc/TROTTER_DIM+para*(delta_costq_1+delta_costq_2+delta_costq_3+delta_costq_4)
 
     # 概率min(1,exp(-BETA*delta_cost))在翻转
-    if delta_cost <= 0:
-        config[c][a][p]*=-1
-        config[c][a][q]*=-1
-        config[c][b][p]*=-1
-        config[c][b][q]*=-1
-    elif np.random.random() < np.exp(-BETA*delta_cost):
-        config[c][a][p]*=-1
-        config[c][a][q]*=-1
-        config[c][b][p]*=-1
-        config[c][b][q]*=-1
+	if delta_cost <= 0:
+		config[c][a][p]*=-1
+		config[c][a][q]*=-1
+		config[c][b][p]*=-1
+		config[c][b][q]*=-1
+	elif np.random.random() < np.exp(-BETA*delta_cost):
+		config[c][a][p]*=-1
+		config[c][a][q]*=-1
+		config[c][b][p]*=-1
+		config[c][b][q]*=-1
 
-    return config
+	return config
 
 
 
@@ -120,7 +121,8 @@ REDUC_PARA = 0.99
 
 FILE_NAME = 'FILE_NAME '
 #读取点坐标
-f = open('./ex1.txt').read().split("\n")
+#f = open('./ex1.txt').read().split("\n")
+f = open('./ex2.txt').read().split("\n")
 POINT = []
 
 for i in f:
@@ -128,7 +130,8 @@ for i in f:
 POINT.pop()
 
 #读取点坐标至之间的关系
-f = open('./link.txt').read().split("\n")
+#f = open('./link.txt').read().split("\n")
+f = open('./link2.txt').read().split("\n")
 LINK = []
 for i in f:
     LINK.append(i.split(" "))
@@ -150,6 +153,8 @@ def distance(p1, p2):
 if __name__ == '__main__':
 
 	matrix=B.creat_dist_matrix(POINT,LINK)
+	#构造路网
+	#D.create_Route(POINT,matrix)
 	
 	A_Path=B.Floyd(matrix)
 	dist_matrix=A_Path[0]  #距离矩阵
@@ -176,7 +181,7 @@ if __name__ == '__main__':
 	print("start...")
 	t0 = time.clock()
 
-	np.random.seed(11)
+	np.random.seed(81)
 	spin = getSpinConfig()
 	LengthList = []
 	for t in range(ANN_STEP):
