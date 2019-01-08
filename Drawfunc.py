@@ -16,9 +16,10 @@ def draw_Route(P,D_Matrix,R):
                    fc=(1., 0.8, 0.8),
                    ))
 	#绘制路线
-	for i in range(len(R)):
-		plt.plot([P[i][0],P[(i+1)%len(R)][0]],[P[i][1],P[(i+1)%len(R)][1]],linewidth=3.0,zorder=3,c='r')
-		plt.text((P[i][0]+P[(i+1)%len(R)][0])/2,(P[i][1]+P[(i+1)%len(R)][1])/2, str(i+1), fontsize=16, rotation_mode='anchor')
+	R.append(R[0])   #连接首结点
+	for i in range(len(R)-1):
+		plt.plot([P[R[i]][0],P[R[i+1]][0]],[P[R[i]][1],P[R[i+1]][1]],linewidth=3.0,zorder=3,c='r')
+		plt.text((P[R[i]][0]+P[R[i+1]][0])/2,(P[R[i]][1]+P[R[i+1]][1])/2, str(i+1), fontsize=16, rotation_mode='anchor')
 		
 	plt.grid(True,ls='--')
 	plt.show()

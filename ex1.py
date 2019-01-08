@@ -114,15 +114,15 @@ def QMC_move(config, ann_para):
 
 TROTTER_DIM = 10
 ANN_PARA =  1.0
-ANN_STEP = 500
+ANN_STEP = 600
 MC_STEP = 3320
 BETA = 37
 REDUC_PARA = 0.99
 
 FILE_NAME = 'FILE_NAME '
 #读取点坐标
-#f = open('./ex1.txt').read().split("\n")
-f = open('./ex2.txt').read().split("\n")
+f = open('./ex1.txt').read().split("\n")
+#f = open('./ex2.txt').read().split("\n")
 POINT = []
 
 for i in f:
@@ -130,8 +130,8 @@ for i in f:
 POINT.pop()
 
 #读取点坐标至之间的关系
-#f = open('./link.txt').read().split("\n")
-f = open('./link2.txt').read().split("\n")
+f = open('./link.txt').read().split("\n")
+#f = open('./link2.txt').read().split("\n")
 LINK = []
 for i in f:
     LINK.append(i.split(" "))
@@ -181,7 +181,7 @@ if __name__ == '__main__':
 	print("start...")
 	t0 = time.clock()
 
-	np.random.seed(81)
+	np.random.seed(41)
 	spin = getSpinConfig()
 	LengthList = []
 	for t in range(ANN_STEP):
@@ -189,11 +189,16 @@ if __name__ == '__main__':
 			con = QMC_move(spin, ANN_PARA)
 			rou = getBestRoute(con)
 			length = getRealTotaldistance(rou)
+		if t==0:
+			LengthList.append(length)
+		else:
+			if length<=LengthList[-1]:    #只将退火过程中路径减少的情况加入列表中
+				#LengthList.append(length)
+				Route = getBestRoute(spin)  #获取路径最短时候的路径顺序
 		LengthList.append(length)
-
 		ANN_PARA *= REDUC_PARA
 
-	Route = getBestRoute(spin)
+	#Route = getBestRoute(spin)
 	Total_Length = getRealTotaldistance(Route)
 	elapsed_time = time.clock()-t0
 
