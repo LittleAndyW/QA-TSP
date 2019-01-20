@@ -116,13 +116,13 @@ TROTTER_DIM = 10
 ANN_PARA =  1.0
 ANN_STEP = 600
 MC_STEP = 3320
-BETA = 37
+BETA = 47
 REDUC_PARA = 0.99
 
 FILE_NAME = 'FILE_NAME '
 #读取点坐标
-f = open('./ex1.txt').read().split("\n")
-#f = open('./ex2.txt').read().split("\n")
+f = open('./data/ex1.txt').read().split("\n")
+#f = open('./data/ex2.txt').read().split("\n")
 POINT = []
 
 for i in f:
@@ -130,8 +130,8 @@ for i in f:
 POINT.pop()
 
 #读取点坐标至之间的关系
-f = open('./link.txt').read().split("\n")
-#f = open('./link2.txt').read().split("\n")
+f = open('./data/link.txt').read().split("\n")
+#f = open('./data/link2.txt').read().split("\n")
 LINK = []
 for i in f:
     LINK.append(i.split(" "))
